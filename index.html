@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Upside</title>
+<meta name="description" content="Ranks stocks and crypto by trend and momentum and splits your budget into picks.">
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Upside">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-512.png">
+<style>
+:root {
+  --bg: #f2f2f7; --card: #ffffff; --text: #000000; --muted: #6e6e73; --line: #e5e5ea;
+  --accent: #1fa463; --accent-soft: rgba(31,164,99,.14);
+  --green: #1a9f55; --green-soft: rgba(52,199,89,.18);
+  --yellow: #b8860b; --yellow-soft: rgba(255,204,0,.22);
+  --red: #e0352b; --red-soft: rgba(255,59,48,.16);
+  --orange: #d9730d; --purple: #8e44ad; --purple-soft: rgba(175,82,222,.16);
+  --chip: #e9e9ee;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #000000; --card: #1c1c1e; --text: #ffffff; --muted: #98989f; --line: #2c2c2e;
+    --accent: #30d158; --accent-soft: rgba(48,209,88,.18);
+    --green: #30d158; --green-soft: rgba(48,209,88,.2);
+    --yellow: #ffd60a; --yellow-soft: rgba(255,214,10,.18);
+    --red: #ff453a; --red-soft: rgba(255,69,58,.2);
+    --orange: #ff9f0a; --purple: #bf5af2; --purple-soft: rgba(191,90,242,.2);
+    --chip: #2c2c2e;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #000000; --card: #1c1c1e; --text: #ffffff; --muted: #98989f; --line: #2c2c2e;
+  --accent: #30d158; --accent-soft: rgba(48,209,88,.18);
+  --green: #30d158; --green-soft: rgba(48,209,88,.2);
+  --yellow: #ffd60a; --yellow-soft: rgba(255,214,10,.18);
+  --red: #ff453a; --red-soft: rgba(255,69,58,.2);
+  --orange: #ff9f0a; --purple: #bf5af2; --purple-soft: rgba(191,90,242,.2);
+  --chip: #2c2c2e;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; background: var(--bg); color: var(--text); }
+body {
+  font: 17px/1.35 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  padding: env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 24px);
+  overflow-x: hidden;
+}
+.wrap { max-width: 560px; margin: 0 auto; padding: 0 16px; }
+h1 { font-size: 34px; font-weight: 800; letter-spacing: -.02em; margin: 18px 4px 12px; }
+.card { background: var(--card); border-radius: 18px; padding: 16px; margin-bottom: 22px; }
+.card.list { padding: 0 16px; }
+.section-head { display: flex; justify-content: space-between; align-items: baseline; margin: 0 4px 8px; color: var(--muted); font-size: 15px; font-weight: 600; }
+.foot { color: var(--muted); font-size: 13px; margin: -14px 4px 22px; }
+.label { color: var(--muted); font-size: 15px; }
+.amount { width: 100%; border: 0; background: transparent; color: var(--text); font: 800 44px/1.1 ui-rounded, -apple-system, system-ui, sans-serif; padding: 6px 0 10px; outline: none; }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.chip { border: 0; background: var(--chip); color: var(--muted); font: 500 17px/1 inherit; padding: 9px 14px; border-radius: 999px; cursor: pointer; }
+.chip.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.seg { display: flex; background: var(--chip); border-radius: 10px; padding: 2px; margin-bottom: 14px; }
+.seg button { flex: 1; border: 0; background: transparent; color: var(--text); font: 500 15px/1 inherit; padding: 8px 0; border-radius: 8px; cursor: pointer; }
+.seg button.on { background: var(--card); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.toggle-row { display: flex; justify-content: space-between; align-items: center; }
+.switch { position: relative; width: 51px; height: 31px; flex: none; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.switch span { position: absolute; inset: 0; background: var(--chip); border-radius: 999px; transition: .2s; cursor: pointer; }
+.switch span::before { content: ""; position: absolute; width: 27px; height: 27px; left: 2px; top: 2px; background: #fff; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,.2); transition: .2s; }
+.switch input:checked + span { background: #34c759; }
+.switch input:checked + span::before { transform: translateX(20px); }
+.row { display: flex; align-items: center; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--line); color: inherit; text-decoration: none; cursor: pointer; }
+.row:last-child { border-bottom: 0; }
+.row:active { opacity: .6; }
+.rank { width: 20px; color: var(--muted); font-size: 13px; text-align: center; font-variant-numeric: tabular-nums; flex: none; }
+.grow { flex: 1; min-width: 0; }
+.tick { font-weight: 650; font-size: 17px; display: flex; align-items: center; gap: 6px; }
+.sub { color: var(--muted); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.right { text-align: right; font-variant-numeric: tabular-nums; flex: none; }
+.money { font-weight: 650; font-variant-numeric: tabular-nums; }
+.tag { font-size: 9px; font-weight: 800; letter-spacing: .04em; padding: 2px 5px; border-radius: 999px; background: var(--purple-soft); color: var(--purple); }
+.badge { width: 42px; height: 30px; border-radius: 8px; display: grid; place-items: center; font-weight: 750; font-size: 15px; font-variant-numeric: tabular-nums; flex: none; }
+.b-green { background: var(--green-soft); color: var(--green); }
+.b-yellow { background: var(--yellow-soft); color: var(--yellow); }
+.b-red { background: var(--red-soft); color: var(--red); }
+.chev { color: var(--muted); opacity: .5; flex: none; }
+.up { color: var(--green); } .down { color: var(--red); }
+.warn { color: var(--orange); font-size: 14px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.warn div { display: flex; gap: 8px; margin: 3px 0; }
+.note { color: var(--muted); font-size: 14px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.note:last-child, .warn:last-child { border-bottom: 0; }
+.muted { color: var(--muted); }
+.loading { display: flex; gap: 10px; align-items: center; color: var(--muted); }
+.spin { width: 18px; height: 18px; border: 2px solid var(--line); border-top-color: var(--muted); border-radius: 50%; animation: s 0.8s linear infinite; }
+@keyframes s { to { transform: rotate(360deg); } }
+.disclaimer { color: var(--muted); font-size: 13px; }
+/* detail */
+.nav { display: flex; align-items: center; height: 52px; position: relative; }
+.back { border: 0; background: var(--card); color: var(--text); width: 40px; height: 40px; border-radius: 50%; font-size: 22px; cursor: pointer; display: grid; place-items: center; }
+.nav-title { position: absolute; left: 0; right: 0; text-align: center; font-weight: 650; pointer-events: none; }
+.hero { display: flex; justify-content: space-between; align-items: flex-start; }
+.big { font-size: 34px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.score-big { font: 900 38px/1 ui-rounded, -apple-system, system-ui, sans-serif; text-align: center; }
+svg.chart { width: 100%; height: 180px; display: block; margin: 14px 0 6px; }
+.kv { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--line); gap: 12px; }
+.kv:last-child { border-bottom: 0; }
+.kv span:last-child { color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; }
+.kv span.up { color: var(--green); } .kv span.down { color: var(--red); }
+.chart-cap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; color: var(--muted); font-size: 13px; }
+.reason { padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 16px; }
+.reason:last-child { border-bottom: 0; }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap" id="home">
+  <h1>Upside</h1>
+
+  <div class="card">
+    <div class="label">How much do you have to invest?</div>
+    <input id="amount" class="amount" inputmode="decimal" autocomplete="off" aria-label="Amount to invest">
+    <div class="chips" id="chips"></div>
+    <div class="seg" id="seg">
+      <button data-f="all">All</button><button data-f="stock">Stocks</button><button data-f="crypto">Crypto</button>
+    </div>
+    <div class="toggle-row">
+      <span>Fractional shares</span>
+      <label class="switch"><input type="checkbox" id="frac"><span></span></label>
+    </div>
+  </div>
+
+  <div id="loading" class="card"><div class="loading"><div class="spin"></div>Loading prices…</div></div>
+
+  <div id="planWrap" hidden>
+    <div class="section-head"><span id="planTitle"></span></div>
+    <div class="card list" id="plan"></div>
+  </div>
+
+  <div id="rankWrap" hidden>
+    <div class="section-head"><span>Ranked by potential</span><span id="updated"></span></div>
+    <div class="card list" id="ranked"></div>
+    <div class="foot">Score = trend gate + 3/6/12-month momentum ÷ volatility. Uptrends score 30–100, downtrends 0–30.</div>
+  </div>
+
+  <div class="card disclaimer">Upside is a screener, not financial advice. Scores come from past prices only. Past performance doesn't predict future returns, and you can lose money, especially in crypto. Only invest what you can afford to lose.</div>
+</div>
+
+<div class="wrap" id="detail" hidden></div>
+
+<script>
+const KIND = {
+  stock:  { year: 252, month: 21, sma: 200 },
+  crypto: { year: 365, month: 30, sma: 50 },
+};
+
+// ---------- storage (per-device convenience only) ----------
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("upside." + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem("upside." + k, JSON.stringify(v)); } catch {} },
+};
+const state = {
+  budget: store.get("budget", 500),
+  filter: store.get("filter", "all"),
+  fractional: store.get("fractional", true),
+  ranked: [],
+  updated: null,
+  failed: [],
+};
+
+// ---------- formatting ----------
+const fmtMoney = (v) => {
+  const digits = v < 1 ? 4 : v >= 10000 ? 0 : 2;
+  return v.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: digits, maximumFractionDigits: digits });
+};
+const pct = (v) => Math.round(v * 100) + "%";
+const spct = (v) => Math.round(v * 100) === 0 ? "0%" : (v >= 0 ? "+" : "−") + pct(Math.abs(v));
+const volLabel = (v) => v < 0.2 ? "low" : v < 0.4 ? "moderate" : v < 0.7 ? "high" : "very high";
+const fmtUnits = (u, kind) => {
+  const suffix = kind === "stock" ? (u === 1 ? " share" : " shares") : "";
+  if (u === Math.round(u)) return u + suffix;
+  const d = u >= 100 ? 2 : u >= 1 ? 4 : 6;
+  return u.toFixed(d) + suffix;
+};
+const ticker = (s) => s.replace("-USD", "");
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+// ---------- scoring (same rules as the iPhone version) ----------
+function metrics(c, kind) {
+  const K = KIND[kind], n = K.sma;
+  if (c.length <= n) return null;
+  const price = c[c.length - 1];
+  const sma = c.slice(-n).reduce((a, b) => a + b, 0) / n;
+  const ret = (m) => { const back = K.month * m; return c.length > back ? price / c[c.length - 1 - back] - 1 : null; };
+  const win = c.slice(-(K.year + 1));
+  const lr = [];
+  for (let i = 1; i < win.length; i++) lr.push(Math.log(win[i] / win[i - 1]));
+  const mean = lr.reduce((a, b) => a + b, 0) / Math.max(lr.length, 1);
+  const variance = lr.reduce((a, x) => a + (x - mean) ** 2, 0) / Math.max(lr.length - 1, 1);
+  const vol = Math.sqrt(variance) * Math.sqrt(K.year);
+  let peak = win[0], mdd = 0;
+  for (const x of win) { peak = Math.max(peak, x); mdd = Math.max(mdd, 1 - x / peak); }
+  const r = { r1: ret(1), r3: ret(3), r6: ret(6), r12: ret(12) };
+  const parts = [[r.r3, 0.2], [r.r6, 0.3], [r.r12, 0.5]].filter(([v]) => v != null);
+  const wsum = parts.reduce((a, [, w]) => a + w, 0);
+  const momentum = wsum ? parts.reduce((a, [v, w]) => a + v * w, 0) / wsum : 0;
+  return {
+    price, sma, smaDays: n, ...r, vol, mdd, momentum,
+    above: price > sma, gap: price / sma - 1,
+    riskAdj: momentum / Math.max(vol, 0.05),
+  };
+}
+
+function score(items) {
+  const vals = items.map((i) => i.m.riskAdj).sort((a, b) => a - b);
+  const denom = Math.max(vals.length - 1, 1);
+  for (const it of items) {
+    const below = vals.filter((v) => v < it.m.riskAdj).length;
+    const p = below / denom * 100;
+    it.score = Math.round(it.m.above ? 30 + 0.7 * p : 0.3 * p);
+  }
+  return items.sort((a, b) => b.score - a.score);
+}
+
+function reasons(it) {
+  const m = it.m, out = [];
+  out.push(m.above
+    ? `Above its ${m.smaDays}-day average (${fmtMoney(m.sma)}) by ${pct(m.gap)}, so the trend rule says it's in an uptrend.`
+    : `Below its ${m.smaDays}-day average (${fmtMoney(m.sma)}) by ${pct(-m.gap)}. The trend rule says stay out until it climbs back above.`);
+  const perf = [];
+  if (m.r12 != null) perf.push(`${spct(m.r12)} over 12 months`);
+  if (m.r6 != null) perf.push(`${spct(m.r6)} over 6`);
+  if (m.r3 != null) perf.push(`${spct(m.r3)} over 3`);
+  if (perf.length) out.push(perf.join(", ") + ".");
+  out.push(`Swings about ${pct(m.vol)} a year (${volLabel(m.vol)} risk).`);
+  out.push(`Worst drop in the past year: ${spct(-m.mdd)}.`);
+  return out;
+}
+
+// ---------- budget planner ----------
+const pickCount = (b) => b < 100 ? 1 : b < 1000 ? 2 : b < 10000 ? 3 : 5;
+
+function plan(budget, ranked, fractional) {
+  const p = { positions: [], cash: 0, badMonth: 0, worst: 0, notes: [] };
+  if (!(budget >= 1)) { p.notes.push("Enter how much you want to put in."); return p; }
+  const up = ranked.filter((r) => r.m.above);
+  if (!up.length) {
+    p.cash = budget;
+    p.notes.push("Nothing on this list is in an uptrend right now. The trend rule says hold cash and check back later.");
+    return p;
+  }
+  const target = pickCount(budget);
+  const wholeOnly = (r) => !fractional && r.kind === "stock";
+  const picks = [], skipped = [];
+  for (const r of up) {
+    if (picks.length >= target) break;
+    if (wholeOnly(r) && r.m.price > budget / target) {
+      if (r.m.price > budget) skipped.push(ticker(r.s));
+      continue;
+    }
+    picks.push(r);
+  }
+  if (!picks.length) {
+    p.cash = budget;
+    p.notes.push(`Every uptrend stock costs more than ${fmtMoney(budget)} a share. Turn on fractional shares or look at crypto.`);
+    return p;
+  }
+  const slice = budget / picks.length;
+  const units = picks.map((r) => wholeOnly(r) ? Math.floor(slice / r.m.price) : slice / r.m.price);
+  let spent = picks.reduce((a, r, i) => a + r.m.price * units[i], 0);
+  if (!fractional) {
+    let bought = true;
+    while (bought) {
+      bought = false;
+      picks.forEach((r, i) => {
+        if (wholeOnly(r) && budget - spent >= r.m.price) { units[i]++; spent += r.m.price; bought = true; }
+      });
+    }
+  }
+  picks.forEach((r, i) => {
+    if (units[i] <= 0) return;
+    const dollars = r.m.price * units[i];
+    p.positions.push({ r, dollars, units: units[i] });
+    const K = KIND[r.kind];
+    const monthVol = r.m.vol * Math.sqrt(K.month / K.year);
+    p.badMonth += dollars * Math.min(1.65 * monthVol, 0.95);
+    p.worst += dollars * r.m.mdd;
+  });
+  p.cash = Math.max(budget - spent, 0);
+  if (picks.length < target && up.length >= target) p.notes.push("Whole shares only: skipped picks priced above your split. Turn on fractional shares to spread it out.");
+  if (skipped.length && !fractional) p.notes.push(`Too pricey for one share at this budget: ${skipped.slice(0, 4).join(", ")}.`);
+  if (up.length < target) p.notes.push(`Only ${up.length} of these ${up.length === 1 ? "is" : "are"} in an uptrend right now, so the plan holds fewer picks.`);
+  return p;
+}
+
+// ---------- rendering ----------
+const $ = (id) => document.getElementById(id);
+const badgeClass = (s) => s >= 70 ? "b-green" : s >= 30 ? "b-yellow" : "b-red";
+const chev = `<svg class="chev" width="8" height="14" viewBox="0 0 8 14" aria-hidden="true"><path d="M1 1l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const visible = () => state.ranked.filter((r) => state.filter === "all" || r.kind === state.filter);
+
+function renderControls() {
+  const amt = $("amount");
+  if (document.activeElement !== amt) amt.value = "$" + Math.round(state.budget).toLocaleString("en-US");
+  $("chips").innerHTML = [100, 500, 1000, 5000].map((v) =>
+    `<button class="chip ${state.budget === v ? "on" : ""}" data-v="${v}">${v >= 1000 ? "$" + v / 1000 + "k" : "$" + v}</button>`).join("");
+  document.querySelectorAll("#seg button").forEach((b) => b.classList.toggle("on", b.dataset.f === state.filter));
+  $("frac").checked = state.fractional;
+}
+
+function renderLists() {
+  if (!state.ranked.length) return;
+  $("loading").hidden = true;
+  $("planWrap").hidden = false;
+  $("rankWrap").hidden = false;
+  const list = visible();
+  const p = plan(state.budget, list, state.fractional);
+  $("planTitle").textContent = `Top picks for ${fmtMoney(state.budget)}`;
+  let h = p.positions.map((pos) => `
+    <a class="row" href="#${encodeURIComponent(pos.r.s)}">
+      <div class="grow"><div class="tick">${esc(ticker(pos.r.s))}</div><div class="sub">${fmtUnits(pos.units, pos.r.kind)}</div></div>
+      <div class="money">${fmtMoney(pos.dollars)}</div>
+      <div class="badge ${badgeClass(pos.r.score)}">${pos.r.score}</div>${chev}
+    </a>`).join("");
+  if (p.cash >= 0.01) h += `<div class="row" style="cursor:default"><div class="grow muted">${p.positions.length ? "Cash left over" : "Keep in cash"}</div><div class="muted money">${fmtMoney(p.cash)}</div></div>`;
+  if (p.positions.length) h += `<div class="warn">
+      <div><span>⚠︎</span><span>A bad month (about 1 in 20) could cost <b>${fmtMoney(p.badMonth)}</b>.</span></div>
+      <div><span>↘︎</span><span>If each pick repeated its worst drop of the past year: <b>−${fmtMoney(p.worst)}</b>.</span></div>
+    </div>`;
+  h += p.notes.map((n) => `<div class="note">${esc(n)}</div>`).join("");
+  $("plan").innerHTML = h;
+
+  $("ranked").innerHTML = list.map((r, i) => `
+    <a class="row" href="#${encodeURIComponent(r.s)}">
+      <div class="rank">${i + 1}</div>
+      <div class="grow">
+        <div class="tick">${esc(ticker(r.s))}${r.kind === "crypto" ? '<span class="tag">CRYPTO</span>' : ""}</div>
+        <div class="sub">${esc(r.n)}</div>
+      </div>
+      <div class="right">
+        <div style="font-size:15px">${fmtMoney(r.m.price)}</div>
+        ${r.m.r3 != null ? `<div class="${r.m.r3 >= 0 ? "up" : "down"}" style="font-size:13px">${spct(r.m.r3)} 3mo</div>` : ""}
+      </div>
+      <div class="badge ${badgeClass(r.score)}">${r.score}</div>${chev}
+    </a>`).join("") +
+    (state.failed.length ? `<div class="note">Couldn't load: ${state.failed.map(ticker).join(", ")}</div>` : "");
+  if (state.updated) $("updated").textContent = "Prices " + timeAgo(state.updated);
+}
+
+function timeAgo(d) {
+  const mins = Math.round((Date.now() - d) / 60000);
+  if (mins < 2) return "just now";
+  if (mins < 60) return `${mins} min ago`;
+  const h = Math.round(mins / 60);
+  return h < 48 ? `${h} hr ago` : d.toLocaleDateString();
+}
+
+function chartSVG(it) {
+  const c = it.c, n = it.m.smaDays, year = KIND[it.kind].year;
+  const start = Math.max(0, c.length - year);
+  const pts = [], sma = [];
+  for (let i = start; i < c.length; i++) {
+    pts.push(c[i]);
+    sma.push(i >= n - 1 ? c.slice(i - n + 1, i + 1).reduce((a, b) => a + b, 0) / n : null);
+  }
+  const all = pts.concat(sma.filter((v) => v != null));
+  let lo = Math.min(...all), hi = Math.max(...all);
+  const pad = (hi - lo) * 0.06 || 1; lo -= pad; hi += pad;
+  const W = 320, H = 160;
+  const x = (i) => (i / (pts.length - 1)) * W;
+  const y = (v) => H - ((v - lo) / (hi - lo)) * H;
+  const path = (arr) => arr.map((v, i) => v == null ? "" : `${arr[i - 1] == null ? "M" : "L"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join("");
+  const color = it.m.above ? "var(--green)" : "var(--red)";
+  const grid = [0.25, 0.5, 0.75].map((f) => `<line x1="0" x2="${W}" y1="${H * f}" y2="${H * f}" stroke="var(--line)" stroke-width="1" vector-effect="non-scaling-stroke"/>`).join("");
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Price over the past year">
+    ${grid}
+    <path d="${path(sma)}" fill="none" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="4 3" vector-effect="non-scaling-stroke"/>
+    <path d="${path(pts)}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+  </svg>
+  <div class="chart-cap"><span>Past year · dashed = ${n}-day average</span><span>${fmtMoney(lo + pad)} – ${fmtMoney(hi - pad)}</span></div>`;
+}
+
+function renderDetail(sym) {
+  const it = state.ranked.find((r) => r.s === sym);
+  if (!it) { showHome(); return; }
+  const m = it.m;
+  let u = state.budget / m.price;
+  if (it.kind === "stock" && !state.fractional) u = Math.floor(u);
+  const stat = (label, v) => `<div class="kv"><span>${label}</span><span class="${v == null ? "" : v >= 0 ? "up" : "down"}">${v == null ? "—" : spct(v)}</span></div>`;
+  const kv = (a, b) => `<div class="kv"><span>${a}</span><span>${b}</span></div>`;
+  $("detail").innerHTML = `
+    <div class="nav"><button class="back" aria-label="Back" onclick="history.back()">‹</button><div class="nav-title">${esc(ticker(it.s))}</div></div>
+    <div class="card">
+      <div class="hero">
+        <div><div class="big">${fmtMoney(m.price)}</div><div class="muted">${esc(it.n)}</div></div>
+        <div><div class="score-big" style="color:var(--${it.score >= 70 ? "green" : it.score >= 30 ? "yellow" : "red"})">${it.score}</div><div class="sub" style="text-align:center">score</div></div>
+      </div>
+      ${chartSVG(it)}
+    </div>
+    <div class="section-head"><span>Why it scores ${it.score}</span></div>
+    <div class="card list">${reasons(it).map((r) => `<div class="reason">${esc(r)}</div>`).join("")}</div>
+    <div class="section-head"><span>Numbers</span></div>
+    <div class="card list">
+      ${stat("1 month", m.r1)}${stat("3 months", m.r3)}${stat("6 months", m.r6)}${stat("12 months", m.r12)}
+      ${kv("Volatility (yearly)", `${pct(m.vol)} · ${volLabel(m.vol)}`)}
+      ${kv("Worst drop, past year", spct(-m.mdd))}
+      ${kv(`${m.smaDays}-day average`, fmtMoney(m.sma))}
+    </div>
+    <div class="section-head"><span>With ${fmtMoney(state.budget)}</span></div>
+    <div class="card list">
+      ${u <= 0
+        ? `<div class="reason">One share costs ${fmtMoney(m.price)}, more than your budget. Turn on fractional shares to buy a slice.</div>`
+        : kv("You'd get", fmtUnits(u, it.kind)) + kv("Cost", fmtMoney(u * m.price)) + kv("If it repeats its worst drop", "−" + fmtMoney(u * m.price * m.mdd))}
+    </div>
+    <div class="card disclaimer">Based on past prices only. Not financial advice.</div>`;
+  $("home").hidden = true;
+  $("detail").hidden = false;
+  window.scrollTo(0, 0);
+}
+
+let homeScroll = 0;
+function showHome() {
+  $("detail").hidden = true;
+  $("home").hidden = false;
+  window.scrollTo(0, homeScroll);
+}
+function route() {
+  const sym = decodeURIComponent(location.hash.slice(1));
+  if (sym && state.ranked.length) renderDetail(sym); else showHome();
+}
+
+// ---------- events ----------
+$("chips").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  state.budget = Number(b.dataset.v); store.set("budget", state.budget);
+  renderControls(); renderLists();
+});
+$("seg").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  state.filter = b.dataset.f; store.set("filter", state.filter);
+  renderControls(); renderLists();
+});
+$("frac").addEventListener("change", (e) => {
+  state.fractional = e.target.checked; store.set("fractional", state.fractional);
+  renderLists();
+});
+$("amount").addEventListener("focus", (e) => { e.target.value = String(Math.round(state.budget)); e.target.select(); });
+$("amount").addEventListener("input", (e) => {
+  const v = Number(e.target.value.replace(/[^0-9.]/g, ""));
+  if (isFinite(v)) { state.budget = v; store.set("budget", v); renderLists(); renderControls(); }
+});
+$("amount").addEventListener("blur", renderControls);
+$("amount").addEventListener("keydown", (e) => { if (e.key === "Enter") e.target.blur(); });
+document.addEventListener("click", (e) => {
+  if (e.target.closest("#home a.row")) homeScroll = window.scrollY;
+});
+window.addEventListener("hashchange", route);
+
+// ---------- load ----------
+async function load() {
+  try {
+    const res = await fetch("data.json?t=" + Math.floor(Date.now() / 300000), { cache: "no-cache" });
+    if (!res.ok) throw new Error(res.status);
+    const d = await res.json();
+    const items = [];
+    for (const a of d.assets) {
+      const m = metrics(a.c, a.k);
+      if (m) items.push({ s: a.s, n: a.n, kind: a.k, c: a.c, m });
+    }
+    state.ranked = score(items);
+    state.updated = new Date(d.updated);
+    state.failed = d.failed || [];
+    renderLists();
+    route();
+  } catch (err) {
+    $("loading").innerHTML = `<div class="muted">Couldn't load prices. Check your connection and reopen the app.</div>`;
+  }
+}
+renderControls();
+load();
+</script>
+</body>
+</html>
